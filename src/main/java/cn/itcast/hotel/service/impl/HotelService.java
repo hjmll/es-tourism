@@ -97,6 +97,13 @@ public class HotelService extends ServiceImpl<HotelMapper, Hotel> implements IHo
         for (SearchHit hit : hits) {
             String json = hit.getSourceAsString();
             HotelDoc hotelDoc = JSON.parseObject(json, HotelDoc.class);
+            //获取排序值
+            Object[] sortValues = hit.getSortValues();
+
+            if (sortValues != null && sortValues.length > 0){
+                Object sortValue = sortValues[0];
+                hotelDoc.setDistance(sortValue);
+            }
             hotels.add(hotelDoc);
         }
         //封装返回
