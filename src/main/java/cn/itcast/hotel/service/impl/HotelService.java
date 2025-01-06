@@ -16,6 +16,8 @@ import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -86,7 +88,18 @@ public class HotelService extends ServiceImpl<HotelMapper, Hotel> implements IHo
             boolQuery.filter(QueryBuilders
                     .rangeQuery("price").gte(params.getMinPrice()).lte(params.getMaxPrice()));
         }
-        request.source().query(boolQuery);
+        // 算分控制
+        FunctionScoreQueryBuilder functionScoreQueryBuilder = QueryBuilders.functionScoreQuery(
+                //原始查询
+                boolQuery,
+                new FunctionScoreQueryBuilder.FilterFunctionBuilder[]{
+                        new FunctionScoreQueryBuilder.FilterFunctionBuilder(
+                                QueryBuilders.termQuery("isAD", true),
+                                ScoreFunctionBuilders.weightFactorFunction(10)
+                        )
+                });
+
+        request.source().query(functionScoreQueryBuilder);
     }
 
     private PageResult handleResponse(SearchResponse response) {
